@@ -29,38 +29,23 @@ DHT dht(DHTPIN, DHTTYPE);
 // Initialize LCD output
 LiquidCrystal_I2C lcd(0x27, 20, 4);
 
-DS3231 Clock;
-
 uint8_t deg[8]={0xe,0xa,0xe,0x0,0x0,0x0,0x0};
 
 String getTimeStr() {
-  boolean Century;
-  boolean h12, PM; //unused but needs to be passed in as a reference
-  // Init booleans
-  Clock.getHour(h12, PM);
-  Clock.getMonth(Century);
-  if (h12) {
-    Clock.setClockMode(false); //24hr if not already set
-  }
-  // YYYY-MM-DDThh:mm:ssZ ISO 8601
-  String timestr="2";
-  if (Century) { // Check if 21xx
-    timestr+="1";
-  } else {
-    timestr+="0";
-  }
-  // All these strings are supposed to be length 2
-  timestr+=leftPadInt(Clock.getYear(),2);
+  DateTime timeobj = RTClib::now();
+  String timestr = "";
+  // All these strings are supposed to be length 2 except for year
+  timestr+=leftPadInt(timeobj.year(),4);
   timestr+="-";
-  timestr+=leftPadInt(Clock.getMonth(Century),2);
+  timestr+=leftPadInt(timeobj.month(),2);
   timestr+="-";
-  timestr+=leftPadInt(Clock.getDate(),2);
+  timestr+=leftPadInt(timeobj.day(),2);
   timestr+="T";
-  timestr+=leftPadInt(Clock.getHour(h12, PM),2);
+  timestr+=leftPadInt(timeobj.hour(),2);
   timestr+=":";
-  timestr+=leftPadInt(Clock.getMinute(),2);
+  timestr+=leftPadInt(timeobj.minute(),2);
   timestr+=":";
-  timestr+=leftPadInt(Clock.getSecond(),2);
+  timestr+=leftPadInt(timeobj.second(),2);
   timestr+="Z";
   return timestr;
 }
