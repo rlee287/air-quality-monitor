@@ -31,6 +31,8 @@ LiquidCrystal_I2C lcd(0x27, 20, 4);
 
 DS3231 Clock;
 
+uint8_t deg[8]={0xe,0xa,0xe,0x0,0x0,0x0,0x0};
+
 String getTimeStr() {
   boolean Century;
   boolean h12, PM; //unused but needs to be passed in as a reference
@@ -42,7 +44,7 @@ String getTimeStr() {
   }
   // YYYY-MM-DDThh:mm:ssZ ISO 8601
   String timestr="2";
-  if (Century) {      // Won't need this for 89 years.
+  if (Century) { // Check if 21xx
     timestr+="1";
   } else {
     timestr+="0";
@@ -73,12 +75,14 @@ String leftPadInt(int number, int width) {
 }
 void setup() {
   Serial.begin(9600);
-  Serial.println("DHTxx test!");
+  Serial.println("AirMonitor initializing");
   lcd.begin();
   lcd.setCursor(0,3);
   lcd.print("Initializing");
+  lcd.createChar(1,deg);
   //Wire.begin() // Init I2C protocol but lcd does this already
   dht.begin();
+  Serial.println("AirMonitor initialized");
 }
 
 void loop() {
@@ -92,7 +96,7 @@ void loop() {
   float t = dht.readTemperature();
   //                 12345678901234567890 °
   String tempStr  = "T *C: ";
-  String humidStr = "RH:   ";
+  String humidStr = "RH %: ";
 
   // Check if reads failed
   boolean hnan = isnan(h);
@@ -125,17 +129,29 @@ void loop() {
     lcd.print(timestring);
   }
   lcd.setCursor(0,1);
-  lcd.print(tempStr);
+  // handle degree symbol
+  char* tempCharArr = tempStr.c_str();
+  while(*tempCharArr!='\x00') {
+    char charPrint = *tempCharArr;
+    if (charPrint=='*') {
+      lcd.write(1);
+    } else {
+      lcd.write(*tempCharArr);
+    }
+    tempCharArr++;
+  }
+  //lcd.print(tempStr);
   lcd.setCursor(0,2);
   lcd.print(humidStr);
 
+  Serial.print(timestring);
+  Serial.print(" : ");
   Serial.print("Humidity: ");
   Serial.print(h);
   Serial.print(" %\t");
   Serial.print("Temperature: ");
   Serial.print(t);
   Serial.println(" *C");
-  Serial.println(timestring);
   // Wait a few seconds between measurements.
   delay(2000);
 }
