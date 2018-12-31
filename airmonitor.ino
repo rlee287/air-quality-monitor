@@ -16,6 +16,9 @@
 //#define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
 //#define DHTTYPE DHT21   // DHT 21 (AM2301)
 
+// Loop delay in ms: adjust to be the max wait time of connected sensors
+#define LOOP_DELAY 2000
+
 // Connect pin 1 (on the left) of the sensor to +5V
 // NOTE: If using a board with 3.3V logic like an Arduino Due connect pin 1
 // to 3.3V instead of 5V!
@@ -114,7 +117,7 @@ void loop() {
     lcd.print(timestring);
   }
   lcd.setCursor(0,1);
-  // handle degree symbol
+  // handle degree symbol with loop printing
   char* tempCharArr = tempStr.c_str();
   while(*tempCharArr!='\x00') {
     char charPrint = *tempCharArr;
@@ -125,7 +128,6 @@ void loop() {
     }
     tempCharArr++;
   }
-  //lcd.print(tempStr);
   lcd.setCursor(0,2);
   lcd.print(humidStr);
 
@@ -137,6 +139,7 @@ void loop() {
   Serial.print("Temperature: ");
   Serial.print(t);
   Serial.println(" *C");
-  // Wait a few seconds between measurements.
-  delay(2000);
+  // Wait a few seconds between measurements
+  // Loop time will be slightly above the specified time but that is acceptable
+  delay(LOOP_DELAY);
 }
