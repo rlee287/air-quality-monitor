@@ -83,9 +83,9 @@ void loop() {
   float h = dht.readHumidity();
   // Read temperature as Celsius (the default)
   float t = dht.readTemperature();
-  //                 12345678901234567890 °
-  String tempStr  = "T *C: ";
-  String humidStr = "RH %: ";
+  //                 12345678901234567890
+  String tempStr  = "T *C:";
+  String humidStr = "RH %:";
 
   // Check if reads failed
   boolean hnan = isnan(h);
@@ -97,7 +97,7 @@ void loop() {
     //         12345678901234567890
     lcd.print("Refreshing failed");
     // Clear humidity number
-    lcd.setCursor(6,2);
+    lcd.setCursor(15,1);
     lcd.print("      ");
   }
   lcd.setCursor(0,3);
@@ -107,7 +107,7 @@ void loop() {
     //         12345678901234567890
     lcd.print("Refreshing failed");
     // Clear temperature number
-    lcd.setCursor(6,1);
+    lcd.setCursor(5,1);
     lcd.print("      ");
   } else if (!hnan) { // tnan is already false here
     tempStr+=String(t,1);
@@ -129,7 +129,7 @@ void loop() {
     }
     tempCharArr++;
   }
-  lcd.setCursor(0,2);
+  lcd.setCursor(10,1);
   lcd.print(humidStr);
 
   Serial.print(timestring);
