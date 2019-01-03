@@ -75,7 +75,8 @@ void setup() {
 
 void loop() {
   lcd.setCursor(0,3);
-  lcd.print("Refreshing...");
+  //         12345678901234567890
+  lcd.print("Refreshing...    ");
   String timestring = getTimeStr();
   // Reading temperature or humidity takes about 250 milliseconds!
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
