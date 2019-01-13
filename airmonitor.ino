@@ -9,7 +9,7 @@
 #include <LiquidCrystal_I2C.h>
 #include <DS3231.h>
 
-#define DHTPIN 13     // DHT digital pin
+#define DHTPIN 8     // DHT digital pin
 
 // Uncomment whatever type you're using!
 #define DHTTYPE DHT11   // DHT 11
@@ -32,7 +32,11 @@ DHT dht(DHTPIN, DHTTYPE);
 // Initialize LCD output
 LiquidCrystal_I2C lcd(0x27, 20, 4);
 
+// Degree symbol
 uint8_t deg[8]={0xe,0xa,0xe,0x0,0x0,0x0,0x0};
+
+// Clock obj for oscillator check and temp
+DS3231 Clock;
 
 String getTimeStr() {
   DateTime timeobj = RTClib::now();
@@ -54,7 +58,7 @@ String getTimeStr() {
 }
 
 // Only properly handles positives but that is fine here
-String leftPadInt(int number, int width) {
+String leftPadInt(int number, size_t width) {
   String retStr = String(number);
   while (width>retStr.length()) {
     retStr="0"+retStr;
@@ -63,21 +67,31 @@ String leftPadInt(int number, int width) {
 }
 void setup() {
   Serial.begin(9600);
-  Serial.println("AirMonitor initializing");
+  Serial.println(F("AirMonitor initializing"));
+  digitalWrite(LED_BUILTIN, LOW);
   lcd.begin();
   lcd.setCursor(0,3);
   lcd.print("Initializing");
   lcd.createChar(1,deg);
   //Wire.begin() // Init I2C protocol but lcd does this already
   dht.begin();
-  Serial.println("AirMonitor initialized");
+  Serial.println(F("AirMonitor initialized"));
 }
 
 void loop() {
   lcd.setCursor(0,3);
   //         12345678901234567890
   lcd.print("Refreshing...    ");
-  String timestring = getTimeStr();
+  digitalWrite(LED_BUILTIN, HIGH);
+  String timestring;
+  float t_clock = Clock.getTemperature();
+  if (Clock.oscillatorCheck()) {
+    timestring = getTimeStr();
+  } else {
+    //            12345678901234567890
+    timestring = "CLOCK ERROR         ";
+    Serial.println(F("ERROR: clock osciillator has stopped in the past. Stored time is incorrect. Please reset the clock."));
+  }
   // Reading temperature or humidity takes about 250 milliseconds!
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
   float h = dht.readHumidity();
@@ -90,8 +104,10 @@ void loop() {
   // Check if reads failed
   boolean hnan = isnan(h);
   boolean tnan = isnan(t);
+  // Sensor is more accurate but do sanity check
+  tnan = tnan || abs(t-t_clock)>3;
   if (hnan) {
-    Serial.println("Failed to read humidity from DHT sensor!");
+    Serial.println(F("Failed to read humidity from DHT sensor!"));
     humidStr+="ERR";
     lcd.setCursor(0,3);
     //         12345678901234567890
@@ -102,7 +118,7 @@ void loop() {
   }
   lcd.setCursor(0,3);
   if (tnan) {
-    Serial.println("Failed to read temperature from DHT sensor!");
+    Serial.println(F("Failed to read temperature from DHT sensor!"));
     tempStr+="ERR";
     //         12345678901234567890
     lcd.print("Refreshing failed");
@@ -117,15 +133,16 @@ void loop() {
     lcd.setCursor(0,0);
     lcd.print(timestring);
   }
+  digitalWrite(LED_BUILTIN, LOW);
   lcd.setCursor(0,1);
   // handle degree symbol with loop printing
-  char* tempCharArr = tempStr.c_str();
+  const char* tempCharArr = tempStr.c_str();
   while(*tempCharArr!='\x00') {
     char charPrint = *tempCharArr;
     if (charPrint=='*') {
       lcd.write(1);
     } else {
-      lcd.write(*tempCharArr);
+      lcd.write(charPrint);
     }
     tempCharArr++;
   }
@@ -133,13 +150,13 @@ void loop() {
   lcd.print(humidStr);
 
   Serial.print(timestring);
-  Serial.print(" : ");
-  Serial.print("Humidity: ");
+  Serial.print(F(" : Humidity: "));
   Serial.print(h);
-  Serial.print(" %\t");
-  Serial.print("Temperature: ");
+  Serial.print(F(" %\tTemperature: "));
   Serial.print(t);
-  Serial.println(" *C");
+  Serial.print(F(" *C\tTemperature Clock: "));
+  Serial.print(t_clock);
+  Serial.println(F(" *C"));
   // Wait a few seconds between measurements
   // Loop time will be slightly above the specified time but that is acceptable
   delay(LOOP_DELAY);
