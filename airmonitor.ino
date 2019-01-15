@@ -68,6 +68,7 @@ String leftPadInt(int number, size_t width) {
 void setup() {
   Serial.begin(9600);
   Serial.println(F("AirMonitor initializing"));
+  pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
   lcd.begin();
   lcd.setCursor(0,3);
